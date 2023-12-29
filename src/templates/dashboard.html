@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Analytics Dashboard</title>
+    <!-- Include Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333;
+            line-height: 1.6;
+        }
+        .chart-container {
+            width: 600px;
+            height: 400px;
+            margin: 20px auto;
+        }
+    </style>
+
+    <script src="https://cdn.anychart.com/releases/8.12.0/js/anychart-core.min.js"></script>
+    <script src="https://cdn.anychart.com/releases/8.12.0/js/anychart-heatmap.min.js"></script>
+</head>
+
+<body>
+    <h1>Analytics Dashboard</h1>
+    <p><b>Total Queries</b>: {{ total_queries }}</p>
+    <p><b>Average Response Time</b>: {{ avg_response_time }} seconds</p>
+    <p><b>Maximum Response Time</b>: {{ max_response_time }} seconds</p>
+    <p><b>Minimum Response Time</b>: {{ min_response_time }} seconds</p>
+    <p><b>Error Rate</b>: {{ error_rate }}%</p>
+    <p><b>Most Frequent Query</b>: {{ most_frequent_query }}</p>
+    <p><b>Unique Users</b>: {{ unique_users_count }}</p><br>
+
+    <h2>Queries by Type:</h2>
+    <div class="chart-container">
+        <canvas id="queryTypeChart"></canvas>
+    </div>
+
+    <script>
+        // Prepare the data for the chart
+        var queryTypes = [];
+        var queryCounts = [];
+
+        {% for query_type, count in query_types.items() %}
+            queryTypes.push("{{ query_type }}");
+            queryCounts.push({{ count }});
+        {% endfor %}
+
+        // Render the chart
+        var ctx = document.getElementById('queryTypeChart').getContext('2d');
+        var queryTypeChart = new Chart(ctx, {
+            type: 'bar', // You can change this to 'line', 'pie', etc.
+            data: {
+                labels: queryTypes,
+                datasets: [{
+                    label: 'Number of Queries',
+                    data: queryCounts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        // ... More colors for each type
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        // ... More border colors for each type
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+    <h2>Queries by Novel:</h2>
+    <div class="chart-container">
+        <canvas id="novelTypeChart"></canvas>
+    </div>
+
+    <script>
+        // Prepare the data for the chart
+        var novelTypes = [];
+        var novelCounts = [];
+
+        {% for novel_type, count in novels_data.items() %}
+            novelTypes.push("{{ novel_type }}");
+            novelCounts.push({{ count }});
+        {% endfor %}
+
+        // Render the chart
+        var ctx = document.getElementById('novelTypeChart').getContext('2d');
+        var queryTypeChart = new Chart(ctx, {
+            type: 'bar', // You can change this to 'line', 'pie', etc.
+            data: {
+                labels: novelTypes,
+                datasets: [{
+                    label: 'Number of Queries',
+                    data: novelCounts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(34, 139, 34, 0.2)',  // Forest Green
+                        'rgba(255, 140, 0, 0.2)', // Dark Orange
+                        'rgba(0, 139, 139, 0.2)', // Dark Cyan
+                        'rgba(128, 0, 128, 0.2)', // Purple
+                        'rgba(70, 130, 180, 0.2)'  // Steel Blue
+                        // ... More colors for each type
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)',
+                        'rgba(255, 206, 86, 0.2)',
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(153, 102, 255, 0.2)',
+                        'rgba(255, 159, 64, 0.2)',
+                        'rgba(34, 139, 34, 0.2)',  // Forest Green
+                        'rgba(255, 140, 0, 0.2)', // Dark Orange
+                        'rgba(0, 139, 139, 0.2)', // Dark Cyan
+                        'rgba(128, 0, 128, 0.2)', // Purple
+                        'rgba(70, 130, 180, 0.2)'  // Steel Blue
+                        // ... More colors for each type
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+    <h2>Queries Timeline:</h2>
+    <div id="container" style="width: 600px; height: 200px; margin: 20px auto;"></div>
+
+    <script>
+        var data = [];
+        {% for item in timeline_data %}
+            var data_point = {x: "{{ item[0] }}", y: "{{ item[1] }}", heat: "{{ item[2] }}", custom_field: "{{ item[3] }}"};
+            data.push(data_point);
+        {% endfor %}
+        data.heat = parseInt(data.heat, 10).toString();
+
+        // Create a chart and set the data
+        var chart = anychart.heatMap(data);
+
+        chart.labels().format("{\%custom_field}");
+        chart.tooltip().format("");
+
+        // create and configure a color scale.
+        var customColorScale = anychart.scales.linearColor();
+        customColorScale.colors(["#00ccff", "#ffcc00"]);
+
+        // set the color scale as the color scale of the chart
+        chart.colorScale(customColorScale);
+
+        // Set the container id
+        chart.container("container");
+
+        // Initiate drawing the chart
+        chart.draw();
+    </script>
+
+
+</body>
+
+</html>
